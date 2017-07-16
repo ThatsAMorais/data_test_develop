@@ -1,0 +1,667 @@
+from io import BytesIO
+
+import datetime
+from collections import OrderedDict
+
+# Mapping of xml-dependent paths to field names for output CSV. An ordered-dict preserves the field order
+OUTPUT_FIELD_NAMES = OrderedDict([
+    ('ListingDetails/MlsId', 'MlsId'),
+    ('ListingDetails/MlsName', 'MlsName'),
+    ('ListingDetails/DateListed', 'DateListed'),
+    ('Location/StreetAddress', 'StreetAddress'),
+    ('ListingDetails/Price', 'Price'),
+    ('BasicDetails/Bedrooms', 'Bedrooms'),
+    ('BasicDetails/Bathrooms', 'Bathrooms'),
+    ('BasicDetails/FullBathrooms', 'FullBathrooms'),
+    ('BasicDetails/HalfBathrooms', 'HalfBathrooms'),
+    ('BasicDetails/ThreeQuarterBathrooms', 'ThreeQuarterBathrooms'),
+    ('RichDetails/Appliances', 'Appliances'),  # (all sub-nodes comma joined)
+    ('RichDetails/Rooms', 'Rooms'),  # (all sub-nodes comma joined)
+    ('BasicDetails/Description', 'Description'),  # (the first 200 characters)
+])
+
+
+# All 2016 properties (DateListed) whose Description contains the word "and"
+QUERY_2016_AND = ("//Listing"
+                  "["
+                  " starts-with(ListingDetails/DateListed, '2016') "
+                  " and "
+                  " contains(BasicDetails/Description, ' and ') "
+                  "]")
+
+
+# Lambda to Sort by DateListed
+SORT_BY_DATELISTED = lambda x: datetime.datetime.strptime(
+    x.findtext('ListingDetails/DateListed'), '%Y-%m-%d %H:%M:%S')
+
+
+XML_FILE = BytesIO("""
+<Listings>
+    <Listing>
+        <Location>
+            <StreetAddress>1234 Test Drive</StreetAddress>
+            <UnitNumber/>
+            <City>CityTest</City>
+            <State>CO</State>
+            <Zip>99999</Zip>
+            <ParcelID/>
+            <Lat>32.1</Lat>
+            <Long>-118.1</Long>
+            <County/>
+            <StreetIntersection/>
+            <DisplayAddress>Yes</DisplayAddress>
+        </Location>
+        <ListingDetails>
+            <Status>Active</Status>
+            <Price>535000.00</Price>
+            <ListingUrl>
+http://www.testurl.com/listing/123456
+</ListingUrl>
+            <MlsId>14799273</MlsId>
+            <MlsName>CLAW</MlsName>
+            <ProviderListingId>42921875</ProviderListingId>
+            <DateListed>2014-10-03 00:00:00</DateListed>
+            <VirtualTourUrl>
+                <![CDATA[
+http://www.testurl.com/listing/123456
+]]>
+            </VirtualTourUrl>
+            <ListingEmail>test@test_email.com</ListingEmail>
+            <AlwaysEmailAgent>0</AlwaysEmailAgent>
+            <ShortSale/>
+            <REO/>
+        </ListingDetails>
+        <RentalDetails>
+            <Availability/>
+            <LeaseTerm/>
+            <DepositFees/>
+            <UtilitiesIncluded>
+                <Water/>
+                <Sewage/>
+                <Garbage/>
+                <Electricity/>
+                <Gas/>
+                <Internet/>
+                <Cable/>
+                <SatTV/>
+            </UtilitiesIncluded>
+            <PetsAllowed>
+                <NoPets/>
+                <Cats/>
+                <SmallDogs/>
+                <LargeDogs/>
+            </PetsAllowed>
+        </RentalDetails>
+        <BasicDetails>
+            <PropertyType>VacantLand</PropertyType>
+            <Title>Test Property</Title>
+            <Description>
+                <![CDATA[this and that]]>
+            </Description>
+            <Bedrooms>0</Bedrooms>
+            <Bathrooms/>
+            <FullBathrooms/>
+            <HalfBathrooms/>
+            <ThreeQuarterBathrooms/>
+            <LivingArea/>
+            <LotSize>10.82</LotSize>
+            <year-built/>
+        </BasicDetails>
+        <Pictures>
+            <Picture>
+                <PictureUrl>
+http://www.testurl.com/picture/0/v32/
+</PictureUrl>
+                <Caption/>
+            </Picture>
+        </Pictures>
+        <Agent>
+            <FirstName>Agent</FirstName>
+            <LastName>Tester</LastName>
+            <EmailAddress>agenttester@test_email.com</EmailAddress>
+            <PictureUrl>
+http://www.testurl.com/picture/realtor/659891/107176/
+</PictureUrl>
+            <OfficeLineNumber>123-555-1234</OfficeLineNumber>
+            <MobilePhoneLineNumber>123-555-1234</MobilePhoneLineNumber>
+            <FaxLineNumber/>
+        </Agent>
+        <Office>
+            <BrokerageName>Partners Trust</BrokerageName>
+            <BrokerPhone>123-555-1234</BrokerPhone>
+            <BrokerEmail>testbroker@test_email.com</BrokerEmail>
+            <BrokerWebsite>http://www.testurl.com/</BrokerWebsite>
+            <StreetAddress>54321 Test Addr Dr.</StreetAddress>
+            <UnitNumber/>
+            <City>Malibu</City>
+            <State>CA</State>
+            <Zip>99999</Zip>
+            <OfficeName>Malibu</OfficeName>
+            <FranchiseName>Test Franchise</FranchiseName>
+        </Office>
+        <OpenHouses>
+            <OpenHouse/>
+        </OpenHouses>
+        <Fees>
+            <Fee>
+                <FeeType/>
+                <FeeAmount/>
+                <FeePeriod>Monthly</FeePeriod>
+            </Fee>
+        </Fees>
+        <Neighborhood>
+            <Name/>
+            <Description/>
+        </Neighborhood>
+        <RichDetails>
+            <AdditionalFeatures/>
+            <Appliances/>
+            <ArchitectureStyle/>
+            <Attic/>
+            <BarbecueArea/>
+            <Basement/>
+            <BuildingUnitCount/>
+            <CableReady/>
+            <CeilingFan/>
+            <CondoFloorNum/>
+            <CoolingSystems>
+                <CoolingSystem/>
+            </CoolingSystems>
+            <Deck/>
+            <DisabledAccess/>
+            <Dock/>
+            <Doorman/>
+            <DoublePaneWindows/>
+            <Elevator>No</Elevator>
+            <ExteriorTypes>
+                <ExteriorType/>
+            </ExteriorTypes>
+            <Fireplace/>
+            <FloorCoverings>
+                <FloorCovering/>
+            </FloorCoverings>
+            <Garden/>
+            <Gated/>
+            <Greenhouse/>
+            <HeatingFuels>
+                <HeatingFuel/>
+            </HeatingFuels>
+            <HottubSpa/>
+            <Intercom/>
+            <JettedBathTub>No</JettedBathTub>
+            <Lawn/>
+            <LegalDescription/>
+            <MotherInLaw/>
+            <NumFloors/>
+            <NumParkingSpaces/>
+            <ParkingTypes>
+                <ParkingType/>
+            </ParkingTypes>
+            <Patio/>
+            <Pond/>
+            <Pool/>
+            <Porch/>
+            <RoofTypes>
+                <RoofType/>
+            </RoofTypes>
+            <RoomCount>0</RoomCount>
+            <RvParking/>
+            <Sauna/>
+            <SecuritySystem>No</SecuritySystem>
+            <Skylight/>
+            <SportsCourt/>
+            <SprinkerSystem/>
+            <VaultedCeiling/>
+            <ViewTypes>
+                <ViewType/>
+            </ViewTypes>
+            <Waterfront/>
+            <Wetbar/>
+            <WhatOwnerLoves/>
+            <Wired/>
+            <YearUpdated/>
+            <FitnessCenter/>
+            <BasketballCourt/>
+            <TennisCourt/>
+            <NearTransportation/>
+            <ControlledAccess/>
+            <Over55ActiveCommunity/>
+            <AssistedLivingCommunity/>
+            <Storage/>
+            <FencedYard/>
+            <PropertyName/>
+            <Furnished/>
+            <HighspeedInternet/>
+            <OnsiteLaundry/>
+            <CableSatTV/>
+            <Taxes>
+                <Tax>
+                    <TaxYear/>
+                    <TaxAmount/>
+                </Tax>
+            </Taxes>
+            <NewConstruction/>
+        </RichDetails>
+    </Listing>
+    <Listing>
+        <Location>
+            <StreetAddress>1234 Test Drive</StreetAddress>
+            <UnitNumber/>
+            <City>CityTest</City>
+            <State>CO</State>
+            <Zip>99999</Zip>
+            <ParcelID/>
+            <Lat>32.1</Lat>
+            <Long>-118.1</Long>
+            <County/>
+            <StreetIntersection/>
+            <DisplayAddress>Yes</DisplayAddress>
+        </Location>
+        <ListingDetails>
+            <Status>Active</Status>
+            <Price>535000.00</Price>
+            <ListingUrl>
+http://www.testurl.com/listing/123456
+</ListingUrl>
+            <MlsId>14799273</MlsId>
+            <MlsName>CLAW</MlsName>
+            <ProviderListingId>42921875</ProviderListingId>
+            <DateListed>2016-10-03 00:00:00</DateListed>
+            <VirtualTourUrl>
+                <![CDATA[
+http://www.testurl.com/listing/123456
+]]>
+            </VirtualTourUrl>
+            <ListingEmail>test@test_email.com</ListingEmail>
+            <AlwaysEmailAgent>0</AlwaysEmailAgent>
+            <ShortSale/>
+            <REO/>
+        </ListingDetails>
+        <RentalDetails>
+            <Availability/>
+            <LeaseTerm/>
+            <DepositFees/>
+            <UtilitiesIncluded>
+                <Water/>
+                <Sewage/>
+                <Garbage/>
+                <Electricity/>
+                <Gas/>
+                <Internet/>
+                <Cable/>
+                <SatTV/>
+            </UtilitiesIncluded>
+            <PetsAllowed>
+                <NoPets/>
+                <Cats/>
+                <SmallDogs/>
+                <LargeDogs/>
+            </PetsAllowed>
+        </RentalDetails>
+        <BasicDetails>
+            <PropertyType>VacantLand</PropertyType>
+            <Title>Test Property</Title>
+            <Description>
+                <![CDATA[this and that]]>
+            </Description>
+            <Bedrooms>0</Bedrooms>
+            <Bathrooms>1</Bathrooms>
+            <FullBathrooms>2</FullBathrooms>
+            <HalfBathrooms>3</HalfBathrooms>
+            <ThreeQuarterBathrooms>4</ThreeQuarterBathrooms>
+            <LivingArea/>
+            <LotSize>10.82</LotSize>
+            <year-built/>
+        </BasicDetails>
+        <Pictures>
+            <Picture>
+                <PictureUrl>
+http://www.testurl.com/picture/0/v32/
+</PictureUrl>
+                <Caption/>
+            </Picture>
+        </Pictures>
+        <Agent>
+            <FirstName>Agent</FirstName>
+            <LastName>Tester</LastName>
+            <EmailAddress>agenttester@test_email.com</EmailAddress>
+            <PictureUrl>
+http://www.testurl.com/picture/realtor/659891/107176/
+</PictureUrl>
+            <OfficeLineNumber>123-555-1234</OfficeLineNumber>
+            <MobilePhoneLineNumber>123-555-1234</MobilePhoneLineNumber>
+            <FaxLineNumber/>
+        </Agent>
+        <Office>
+            <BrokerageName>Partners Trust</BrokerageName>
+            <BrokerPhone>123-555-1234</BrokerPhone>
+            <BrokerEmail>testbroker@test_email.com</BrokerEmail>
+            <BrokerWebsite>http://www.testurl.com/</BrokerWebsite>
+            <StreetAddress>54321 Test Addr Dr.</StreetAddress>
+            <UnitNumber/>
+            <City>Malibu</City>
+            <State>CA</State>
+            <Zip>99999</Zip>
+            <OfficeName>Malibu</OfficeName>
+            <FranchiseName>Test Franchise</FranchiseName>
+        </Office>
+        <OpenHouses>
+            <OpenHouse/>
+        </OpenHouses>
+        <Fees>
+            <Fee>
+                <FeeType/>
+                <FeeAmount/>
+                <FeePeriod>Monthly</FeePeriod>
+            </Fee>
+        </Fees>
+        <Neighborhood>
+            <Name/>
+            <Description/>
+        </Neighborhood>
+        <RichDetails>
+            <AdditionalFeatures/>
+            <Appliances>
+                <Appliance>Appliance1</Appliance>
+                <Appliance>Appliance2</Appliance>
+            </Appliances>
+            <ArchitectureStyle/>
+            <Attic/>
+            <BarbecueArea/>
+            <Basement/>
+            <BuildingUnitCount/>
+            <CableReady/>
+            <CeilingFan/>
+            <CondoFloorNum/>
+            <CoolingSystems>
+                <CoolingSystem/>
+            </CoolingSystems>
+            <Deck/>
+            <DisabledAccess/>
+            <Dock/>
+            <Doorman/>
+            <DoublePaneWindows/>
+            <Elevator>No</Elevator>
+            <ExteriorTypes>
+                <ExteriorType/>
+            </ExteriorTypes>
+            <Fireplace/>
+            <FloorCoverings>
+                <FloorCovering/>
+            </FloorCoverings>
+            <Garden/>
+            <Gated/>
+            <Greenhouse/>
+            <HeatingFuels>
+                <HeatingFuel/>
+            </HeatingFuels>
+            <HottubSpa/>
+            <Intercom/>
+            <JettedBathTub>No</JettedBathTub>
+            <Lawn/>
+            <LegalDescription/>
+            <MotherInLaw/>
+            <NumFloors/>
+            <NumParkingSpaces/>
+            <ParkingTypes>
+                <ParkingType/>
+            </ParkingTypes>
+            <Patio/>
+            <Pond/>
+            <Pool/>
+            <Porch/>
+            <RoofTypes>
+                <RoofType/>
+            </RoofTypes>
+            <RoomCount>0</RoomCount>
+            <Rooms>
+                <Room>room 1</Room>
+                <Room>room 2</Room>
+                <Room>room 3</Room>
+            </Rooms>
+            <RvParking/>
+            <Sauna/>
+            <SecuritySystem>No</SecuritySystem>
+            <Skylight/>
+            <SportsCourt/>
+            <SprinkerSystem/>
+            <VaultedCeiling/>
+            <ViewTypes>
+                <ViewType/>
+            </ViewTypes>
+            <Waterfront/>
+            <Wetbar/>
+            <WhatOwnerLoves/>
+            <Wired/>
+            <YearUpdated/>
+            <FitnessCenter/>
+            <BasketballCourt/>
+            <TennisCourt/>
+            <NearTransportation/>
+            <ControlledAccess/>
+            <Over55ActiveCommunity/>
+            <AssistedLivingCommunity/>
+            <Storage/>
+            <FencedYard/>
+            <PropertyName/>
+            <Furnished/>
+            <HighspeedInternet/>
+            <OnsiteLaundry/>
+            <CableSatTV/>
+            <Taxes>
+                <Tax>
+                    <TaxYear/>
+                    <TaxAmount/>
+                </Tax>
+            </Taxes>
+            <NewConstruction/>
+        </RichDetails>
+    </Listing>
+    <Listing>
+        <Location>
+            <StreetAddress>1234 Test Drive</StreetAddress>
+            <UnitNumber/>
+            <City>CityTest</City>
+            <State>CO</State>
+            <Zip>99999</Zip>
+            <ParcelID/>
+            <Lat>32.1</Lat>
+            <Long>-118.1</Long>
+            <County/>
+            <StreetIntersection/>
+            <DisplayAddress>Yes</DisplayAddress>
+        </Location>
+        <ListingDetails>
+            <Status>Active</Status>
+            <Price>535000.00</Price>
+            <ListingUrl>
+http://www.testurl.com/listing/123456
+</ListingUrl>
+            <MlsId>14799273</MlsId>
+            <MlsName>CLAW</MlsName>
+            <ProviderListingId>42921875</ProviderListingId>
+            <DateListed>2016-10-03 00:00:00</DateListed>
+            <VirtualTourUrl>
+                <![CDATA[
+http://www.testurl.com/listing/123456
+]]>
+            </VirtualTourUrl>
+            <ListingEmail>test@test_email.com</ListingEmail>
+            <AlwaysEmailAgent>0</AlwaysEmailAgent>
+            <ShortSale/>
+            <REO/>
+        </ListingDetails>
+        <RentalDetails>
+            <Availability/>
+            <LeaseTerm/>
+            <DepositFees/>
+            <UtilitiesIncluded>
+                <Water/>
+                <Sewage/>
+                <Garbage/>
+                <Electricity/>
+                <Gas/>
+                <Internet/>
+                <Cable/>
+                <SatTV/>
+            </UtilitiesIncluded>
+            <PetsAllowed>
+                <NoPets/>
+                <Cats/>
+                <SmallDogs/>
+                <LargeDogs/>
+            </PetsAllowed>
+        </RentalDetails>
+        <BasicDetails>
+            <PropertyType>VacantLand</PropertyType>
+            <Title>Test Property</Title>
+            <Description>
+                <![CDATA[a description]]>
+            </Description>
+            <Bedrooms>0</Bedrooms>
+            <Bathrooms/>
+            <FullBathrooms/>
+            <HalfBathrooms/>
+            <ThreeQuarterBathrooms/>
+            <LivingArea/>
+            <LotSize>10.82</LotSize>
+            <year-built/>
+        </BasicDetails>
+        <Pictures>
+            <Picture>
+                <PictureUrl>
+http://www.testurl.com/picture/0/v32/
+</PictureUrl>
+                <Caption/>
+            </Picture>
+        </Pictures>
+        <Agent>
+            <FirstName>Agent</FirstName>
+            <LastName>Tester</LastName>
+            <EmailAddress>agenttester@test_email.com</EmailAddress>
+            <PictureUrl>
+http://www.testurl.com/picture/realtor/659891/107176/
+</PictureUrl>
+            <OfficeLineNumber>123-555-1234</OfficeLineNumber>
+            <MobilePhoneLineNumber>123-555-1234</MobilePhoneLineNumber>
+            <FaxLineNumber/>
+        </Agent>
+        <Office>
+            <BrokerageName>Partners Trust</BrokerageName>
+            <BrokerPhone>123-555-1234</BrokerPhone>
+            <BrokerEmail>testbroker@test_email.com</BrokerEmail>
+            <BrokerWebsite>http://www.testurl.com/</BrokerWebsite>
+            <StreetAddress>54321 Test Addr Dr.</StreetAddress>
+            <UnitNumber/>
+            <City>Malibu</City>
+            <State>CA</State>
+            <Zip>99999</Zip>
+            <OfficeName>Malibu</OfficeName>
+            <FranchiseName>Test Franchise</FranchiseName>
+        </Office>
+        <OpenHouses>
+            <OpenHouse/>
+        </OpenHouses>
+        <Fees>
+            <Fee>
+                <FeeType/>
+                <FeeAmount/>
+                <FeePeriod>Monthly</FeePeriod>
+            </Fee>
+        </Fees>
+        <Neighborhood>
+            <Name/>
+            <Description/>
+        </Neighborhood>
+        <RichDetails>
+            <AdditionalFeatures/>
+            <Appliances/>
+            <ArchitectureStyle/>
+            <Attic/>
+            <BarbecueArea/>
+            <Basement/>
+            <BuildingUnitCount/>
+            <CableReady/>
+            <CeilingFan/>
+            <CondoFloorNum/>
+            <CoolingSystems>
+                <CoolingSystem/>
+            </CoolingSystems>
+            <Deck/>
+            <DisabledAccess/>
+            <Dock/>
+            <Doorman/>
+            <DoublePaneWindows/>
+            <Elevator>No</Elevator>
+            <ExteriorTypes>
+                <ExteriorType/>
+            </ExteriorTypes>
+            <Fireplace/>
+            <FloorCoverings>
+                <FloorCovering/>
+            </FloorCoverings>
+            <Garden/>
+            <Gated/>
+            <Greenhouse/>
+            <HeatingFuels>
+                <HeatingFuel/>
+            </HeatingFuels>
+            <HottubSpa/>
+            <Intercom/>
+            <JettedBathTub>No</JettedBathTub>
+            <Lawn/>
+            <LegalDescription/>
+            <MotherInLaw/>
+            <NumFloors/>
+            <NumParkingSpaces/>
+            <ParkingTypes>
+                <ParkingType/>
+            </ParkingTypes>
+            <Patio/>
+            <Pond/>
+            <Pool/>
+            <Porch/>
+            <RoofTypes>
+                <RoofType/>
+            </RoofTypes>
+            <RoomCount>0</RoomCount>
+            <RvParking/>
+            <Sauna/>
+            <SecuritySystem>No</SecuritySystem>
+            <Skylight/>
+            <SportsCourt/>
+            <SprinkerSystem/>
+            <VaultedCeiling/>
+            <ViewTypes>
+                <ViewType/>
+            </ViewTypes>
+            <Waterfront/>
+            <Wetbar/>
+            <WhatOwnerLoves/>
+            <Wired/>
+            <YearUpdated/>
+            <FitnessCenter/>
+            <BasketballCourt/>
+            <TennisCourt/>
+            <NearTransportation/>
+            <ControlledAccess/>
+            <Over55ActiveCommunity/>
+            <AssistedLivingCommunity/>
+            <Storage/>
+            <FencedYard/>
+            <PropertyName/>
+            <Furnished/>
+            <HighspeedInternet/>
+            <OnsiteLaundry/>
+            <CableSatTV/>
+            <Taxes>
+                <Tax>
+                    <TaxYear/>
+                    <TaxAmount/>
+                </Tax>
+            </Taxes>
+            <NewConstruction/>
+        </RichDetails>
+    </Listing>
+</Listings>
+""")

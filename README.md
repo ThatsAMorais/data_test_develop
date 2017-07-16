@@ -44,3 +44,15 @@ is very important.
 This assignment is expect to take a few hours. We ask that you do not spend too much time on this solution. If you
 are stuck or have questions, feel free to reach out and we will answer quickly. 
 
+# How-To Run as a Script
+My script comes with a `main` method for quickly executing the Assignment. It will generate a local file with some hash value (output to the console).
+
+Assuming the user has installed all pip requirements, the command should work as follows:
+
+```$> python xml_to_csv_assignment_test.py```
+
+# How-To Run the Tests
+
+I used `nose` so to run all tests execute:
+
+```$> nosetests```
